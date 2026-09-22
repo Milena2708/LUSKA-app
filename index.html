@@ -1,0 +1,1148 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#7B1D3A" />
+  <meta name="description" content="Luzka – Monitor de Índice UV con análisis biofacial en tiempo real." />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Luzka" />
+
+  <title>Luzka – Monitor UV</title>
+
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="./manifest.json" />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            guinda:  { DEFAULT: '#7B1D3A', light: '#9B2D50', dark: '#5A1228' },
+            durazno: { DEFAULT: '#F5A07A', light: '#F8C0A0', dark: '#E07850' },
+            crema:   { DEFAULT: '#F5ECD7', light: '#FBF6EE', dark: '#E8D8B8' },
+            celeste: { DEFAULT: '#3B9EC4', light: '#5DB8D8', dark: '#2A7A9A' },
+          },
+          fontFamily: {
+            display: ['"Playfair Display"', 'Georgia', 'serif'],
+            body:    ['"DM Sans"', 'system-ui', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+
+  <style>
+    /* ── Base ───────────────────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body {
+      font-family: 'DM Sans', system-ui, sans-serif;
+      background: #F5ECD7;
+      color: #2D1A22;
+      min-height: 100%;
+      overflow-x: hidden;
+    }
+
+    /* ── Scrollbar minimalista ─────────────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-thumb { background: #7B1D3A55; border-radius: 4px; }
+
+    /* ── Secciones / pantallas ─────────────────────────────────────────────── */
+    .screen { display: none; min-height: 100svh; }
+    .screen.active { display: flex; flex-direction: column; }
+
+    /* ── Cámara circular ───────────────────────────────────────────────────── */
+    .camera-ring {
+      width: 220px; height: 220px;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 4px solid #7B1D3A;
+      box-shadow: 0 0 0 6px #F5A07A55, 0 0 0 12px #7B1D3A22;
+      position: relative;
+    }
+    .camera-ring video { width: 100%; height: 100%; object-fit: cover; }
+
+    /* ── Barra de análisis ──────────────────────────────────────────────────── */
+    @keyframes scanLine {
+      0%   { top: 0%; }
+      100% { top: 100%; }
+    }
+    .scan-line {
+      position: absolute; left: 0; width: 100%; height: 3px;
+      background: linear-gradient(90deg, transparent, #F5A07A, #7B1D3A, #F5A07A, transparent);
+      animation: scanLine 1.6s linear infinite;
+      box-shadow: 0 0 8px #F5A07A88;
+    }
+
+    /* ── Progress bar de análisis ───────────────────────────────────────────── */
+    @keyframes fillBar { from { width: 0%; } to { width: 100%; } }
+    .fill-bar { animation: fillBar 2.8s ease-in-out forwards; }
+
+    /* ── UV color badge ─────────────────────────────────────────────────────── */
+    .uv-badge {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 5rem;
+      line-height: 1;
+      font-weight: 700;
+    }
+
+    /* ── Card animación de entrada ──────────────────────────────────────────── */
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .card-enter { animation: slideUp 0.4s ease forwards; }
+
+    /* ── Botón instalar pulsante ─────────────────────────────────────────────── */
+    @keyframes pulse-ring {
+      0%   { box-shadow: 0 0 0 0 #F5A07A88; }
+      70%  { box-shadow: 0 0 0 14px #F5A07A00; }
+      100% { box-shadow: 0 0 0 0 #F5A07A00; }
+    }
+    .btn-install { animation: pulse-ring 2s infinite; }
+
+    /* ── SVG icon animations ─────────────────────────────────────────────────── */
+    @keyframes spin-slow { to { transform: rotate(360deg); } }
+    @keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+    @keyframes drip { 0%,100% { opacity: 1; transform: scaleY(1); } 50% { opacity: 0.6; transform: scaleY(1.15); } }
+    .spin-slow { animation: spin-slow 8s linear infinite; }
+    .bob       { animation: bob 2s ease-in-out infinite; }
+    .drip      { animation: drip 2.5s ease-in-out infinite; }
+
+    /* ── Tooltip bilingüe ───────────────────────────────────────────────────── */
+    .lang-toggle span { transition: opacity 0.3s; }
+  </style>
+</head>
+
+<body class="bg-crema font-body">
+
+<!-- ════════════════════════════════════════════════════════════════════════════
+     PANTALLA 1 – BIENVENIDA
+═══════════════════════════════════════════════════════════════════════════════ -->
+<section id="screen-welcome" class="screen active items-center justify-between px-6 py-10" style="background: linear-gradient(160deg, #F5ECD7 0%, #F8D8C8 60%, #EBC8D0 100%);">
+
+  <!-- Header logo -->
+  <div class="w-full flex justify-between items-center">
+    <div>
+      <span class="text-xs font-medium tracking-widest text-guinda/60 uppercase">Real-time</span>
+      <h1 class="font-display text-4xl text-guinda leading-tight">Luzka</h1>
+    </div>
+    <!-- Botón idioma -->
+    <button id="btn-lang" onclick="toggleLang()" class="text-xs bg-guinda/10 text-guinda px-3 py-1.5 rounded-full font-medium border border-guinda/20 hover:bg-guinda/20 transition-colors">
+      <span id="lang-label">EN</span>
+    </button>
+  </div>
+
+  <!-- Ilustración central -->
+  <div class="flex flex-col items-center gap-4 my-6">
+    <div class="relative">
+      <svg class="spin-slow" width="160" height="160" viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="80" cy="80" r="40" fill="#F5A07A" opacity="0.9"/>
+        <circle cx="80" cy="80" r="30" fill="#E07850" opacity="0.6"/>
+        <!-- Rayos solares -->
+        <g stroke="#7B1D3A" stroke-width="3" stroke-linecap="round">
+          <line x1="80" y1="12" x2="80" y2="28"/>
+          <line x1="80" y1="132" x2="80" y2="148"/>
+          <line x1="12" y1="80" x2="28" y2="80"/>
+          <line x1="132" y1="80" x2="148" y2="80"/>
+          <line x1="29" y1="29" x2="41" y2="41"/>
+          <line x1="119" y1="119" x2="131" y2="131"/>
+          <line x1="131" y1="29" x2="119" y2="41"/>
+          <line x1="41" y1="119" x2="29" y2="131"/>
+        </g>
+        <text x="80" y="87" text-anchor="middle" font-family="Playfair Display, serif" font-size="22" font-weight="700" fill="#F5ECD7">UV</text>
+      </svg>
+      <!-- Onda de índice animada -->
+      <div class="absolute -bottom-2 -right-2 bg-guinda text-crema text-xs font-bold px-2 py-1 rounded-full shadow-lg">LIVE</div>
+    </div>
+
+    <div class="text-center max-w-xs">
+      <p class="text-guinda font-semibold text-lg leading-snug" data-i18n="welcome-title">Monitor de Índice UV</p>
+      <p class="text-guinda/60 text-sm mt-1" data-i18n="welcome-sub">con análisis de tipo de piel en tiempo real</p>
+    </div>
+  </div>
+
+  <!-- Pasos rápidos -->
+  <div class="w-full max-w-xs mx-auto space-y-2 mb-4">
+    <div class="flex items-center gap-3 bg-white/60 rounded-xl px-4 py-2.5 border border-guinda/10">
+      <span class="w-7 h-7 rounded-full bg-guinda flex items-center justify-center text-crema text-xs font-bold shrink-0">1</span>
+      <span class="text-sm text-guinda/80" data-i18n="step1">Análisis facial de tu tipo de piel</span>
+    </div>
+    <div class="flex items-center gap-3 bg-white/60 rounded-xl px-4 py-2.5 border border-guinda/10">
+      <span class="w-7 h-7 rounded-full bg-durazno flex items-center justify-center text-guinda text-xs font-bold shrink-0">2</span>
+      <span class="text-sm text-guinda/80" data-i18n="step2">Geolocalización automática</span>
+    </div>
+    <div class="flex items-center gap-3 bg-white/60 rounded-xl px-4 py-2.5 border border-guinda/10">
+      <span class="w-7 h-7 rounded-full bg-celeste flex items-center justify-center text-white text-xs font-bold shrink-0">3</span>
+      <span class="text-sm text-guinda/80" data-i18n="step3">Recomendaciones personalizadas</span>
+    </div>
+  </div>
+
+  <!-- CTAs -->
+  <div class="w-full max-w-xs mx-auto space-y-3">
+    <button onclick="goToCamera()" class="w-full bg-guinda text-crema font-semibold py-4 rounded-2xl shadow-lg hover:bg-guinda-dark active:scale-95 transition-all text-base" data-i18n="btn-start">
+      Comenzar análisis
+    </button>
+
+    <!-- BOTÓN INSTALAR PWA (oculto hasta que el navegador lo permita) -->
+    <button id="btn-install" onclick="installPWA()" class="btn-install hidden w-full bg-durazno text-guinda font-semibold py-3.5 rounded-2xl border-2 border-guinda/20 text-sm flex items-center justify-center gap-2">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2v13M7 9l5 5 5-5"/><rect x="3" y="18" width="18" height="3" rx="1.5"/>
+      </svg>
+      <span data-i18n="btn-install">📍 Instalar aplicación</span>
+    </button>
+  </div>
+
+  <p class="text-xs text-guinda/40 text-center mt-4" data-i18n="disclaimer">
+    Luzka usa tu cámara y GPS solo durante la sesión. Ningún dato se almacena.
+  </p>
+</section>
+
+
+<!-- ════════════════════════════════════════════════════════════════════════════
+     PANTALLA 2 – ANÁLISIS BIOFACIAL
+═══════════════════════════════════════════════════════════════════════════════ -->
+<section id="screen-camera" class="screen flex-col items-center px-6 py-8 gap-6" style="background: linear-gradient(160deg, #F5ECD7 0%, #EBC8D0 100%);">
+
+  <!-- Header -->
+  <div class="w-full flex items-center gap-3">
+    <button onclick="goBack('screen-welcome')" class="w-9 h-9 rounded-full bg-guinda/10 flex items-center justify-center text-guinda hover:bg-guinda/20 transition-colors">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+    </button>
+    <div>
+      <h2 class="font-display text-guinda text-xl" data-i18n="camera-title">Sensor Biofacial</h2>
+      <p class="text-xs text-guinda/50" data-i18n="camera-sub">Escala de Fitzpatrick</p>
+    </div>
+  </div>
+
+  <!-- Instrucción fondo blanco -->
+  <div class="w-full bg-white/80 border border-guinda/20 rounded-2xl px-4 py-3 flex gap-3 items-start shadow-sm">
+    <span class="text-2xl mt-0.5">🤍</span>
+    <p class="text-sm text-guinda/80 leading-relaxed" data-i18n="bg-instruction">
+      <strong>Importante:</strong> Colócate frente a un <strong>fondo blanco</strong> para evitar interferencias en la lectura del color de piel.
+    </p>
+  </div>
+
+  <!-- Visor circular de cámara -->
+  <div class="camera-ring" id="camera-ring">
+    <video id="video-feed" autoplay playsinline muted></video>
+    <canvas id="canvas-capture" class="hidden" width="220" height="220"></canvas>
+    <div id="scan-anim" class="scan-line hidden"></div>
+  </div>
+
+  <!-- Estado de análisis -->
+  <div id="scan-status" class="text-center">
+    <p class="text-sm text-guinda/70" data-i18n="scan-ready">Cámara lista. Presiona el botón para escanear.</p>
+  </div>
+
+  <!-- Barra de progreso de análisis -->
+  <div id="progress-container" class="hidden w-full max-w-xs">
+    <div class="flex justify-between text-xs text-guinda/60 mb-1">
+      <span data-i18n="analyzing">Analizando biotipo facial...</span>
+      <span id="progress-pct">0%</span>
+    </div>
+    <div class="w-full h-2 bg-guinda/10 rounded-full overflow-hidden">
+      <div id="progress-bar" class="h-full bg-gradient-to-r from-guinda to-durazno rounded-full fill-bar" style="width:0%"></div>
+    </div>
+    <div class="flex gap-1 mt-2 justify-center" id="analysis-steps">
+      <span class="text-xs text-guinda/50" id="astep-1" data-i18n="astep1">Capturando muestra</span>
+      <span class="text-xs text-guinda/30">→</span>
+      <span class="text-xs text-guinda/50" id="astep-2" data-i18n="astep2">Procesando RGB</span>
+      <span class="text-xs text-guinda/30">→</span>
+      <span class="text-xs text-guinda/50" id="astep-3" data-i18n="astep3">Clasificando</span>
+    </div>
+  </div>
+
+  <!-- Botón escanear -->
+  <div class="flex gap-3">
+    <button id="btn-scan" onclick="startScan()" class="bg-guinda text-crema font-semibold px-8 py-3.5 rounded-2xl shadow-lg hover:bg-guinda-dark active:scale-95 transition-all flex items-center gap-2" data-i18n="btn-scan">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"/><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" opacity=".3"/>
+        <path d="M12 5v2M12 17v2M5 12H3M21 12h-2M7.05 7.05l-1.41-1.41M18.36 18.36l-1.41-1.41M7.05 16.95l-1.41 1.41M18.36 5.64l-1.41 1.41"/>
+      </svg>
+      Escanear Piel / Scan Skin
+    </button>
+    <button onclick="skipCamera()" class="text-guinda/50 text-sm underline underline-offset-2 hover:text-guinda transition-colors" data-i18n="btn-skip">Omitir</button>
+  </div>
+
+  <!-- Error cámara -->
+  <div id="camera-error" class="hidden w-full bg-red-50 border border-red-200 rounded-2xl p-4 text-center">
+    <p class="text-red-700 text-sm font-medium" data-i18n="cam-err-title">Sin acceso a la cámara</p>
+    <p class="text-red-500 text-xs mt-1" data-i18n="cam-err-sub">Puedes continuar con tipo de piel "Mediana" por defecto.</p>
+    <button onclick="skipCamera()" class="mt-3 bg-red-600 text-white text-sm px-4 py-2 rounded-xl" data-i18n="btn-continue">Continuar de todas formas</button>
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════════════════════════════════════════════════
+     PANTALLA 3 – GEOLOCALIZACIÓN
+═══════════════════════════════════════════════════════════════════════════════ -->
+<section id="screen-location" class="screen flex-col items-center px-6 py-8 gap-6" style="background: linear-gradient(160deg, #F5ECD7 0%, #D8EEF5 100%);">
+
+  <!-- Header -->
+  <div class="w-full flex items-center gap-3">
+    <button onclick="goBack('screen-camera')" class="w-9 h-9 rounded-full bg-celeste/10 flex items-center justify-center text-celeste hover:bg-celeste/20 transition-colors">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+    </button>
+    <div>
+      <h2 class="font-display text-guinda text-xl" data-i18n="loc-title">Ubicación</h2>
+      <p class="text-xs text-guinda/50" data-i18n="loc-sub">Para medir el Índice UV real</p>
+    </div>
+  </div>
+
+  <!-- Skin result pill -->
+  <div id="skin-result-pill" class="bg-guinda/10 border border-guinda/20 rounded-2xl px-4 py-2.5 flex items-center gap-2">
+    <span class="text-lg" id="skin-emoji">🧬</span>
+    <div>
+      <p class="text-xs text-guinda/50" data-i18n="skin-detected">Tipo de piel detectado</p>
+      <p class="text-sm font-semibold text-guinda" id="skin-type-label">Tez Mediana / Medium Tone</p>
+    </div>
+  </div>
+
+  <!-- GPS automático -->
+  <div class="w-full max-w-xs">
+    <button onclick="getGPS()" id="btn-gps" class="w-full bg-celeste text-white font-semibold py-4 rounded-2xl shadow-lg hover:bg-celeste-dark active:scale-95 transition-all flex items-center justify-center gap-2 mb-4">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/>
+        <line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/>
+      </svg>
+      <span data-i18n="btn-gps">Usar mi ubicación (GPS)</span>
+    </button>
+
+    <div class="flex items-center gap-3 my-2">
+      <div class="flex-1 h-px bg-guinda/15"></div>
+      <span class="text-xs text-guinda/40" data-i18n="or-manual">o ingresa manualmente</span>
+      <div class="flex-1 h-px bg-guinda/15"></div>
+    </div>
+
+    <!-- Inputs manuales -->
+    <div class="space-y-3 mt-3">
+      <div>
+        <label class="text-xs font-medium text-guinda/60 mb-1 block">Latitud / Latitude</label>
+        <input type="number" id="input-lat" step="0.0001" placeholder="-12.0464" class="w-full bg-white/80 border border-guinda/20 rounded-xl px-4 py-3 text-sm text-guinda placeholder:text-guinda/30 focus:outline-none focus:ring-2 focus:ring-guinda/30" />
+      </div>
+      <div>
+        <label class="text-xs font-medium text-guinda/60 mb-1 block">Longitud / Longitude</label>
+        <input type="number" id="input-lng" step="0.0001" placeholder="-77.0428" class="w-full bg-white/80 border border-guinda/20 rounded-xl px-4 py-3 text-sm text-guinda placeholder:text-guinda/30 focus:outline-none focus:ring-2 focus:ring-guinda/30" />
+      </div>
+      <button onclick="useManualCoords()" class="w-full bg-guinda text-crema font-semibold py-3.5 rounded-2xl hover:bg-guinda-dark active:scale-95 transition-all text-sm" data-i18n="btn-manual">
+        Consultar Índice UV
+      </button>
+    </div>
+  </div>
+
+  <!-- Estado GPS -->
+  <div id="gps-status" class="text-sm text-guinda/60 text-center hidden"></div>
+
+  <!-- Error GPS -->
+  <div id="gps-error" class="hidden w-full max-w-xs bg-amber-50 border border-amber-200 rounded-2xl p-4">
+    <p class="text-amber-700 text-sm font-medium" data-i18n="gps-err">No se pudo obtener el GPS</p>
+    <p class="text-amber-500 text-xs mt-1" data-i18n="gps-err-sub">Ingresa las coordenadas manualmente.</p>
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════════════════════════════════════════════════
+     PANTALLA 4 – RESULTADOS
+═══════════════════════════════════════════════════════════════════════════════ -->
+<section id="screen-results" class="screen flex-col px-4 py-6 gap-4">
+
+  <!-- Header fijo -->
+  <div class="flex items-center justify-between px-2">
+    <button onclick="goBack('screen-location')" class="w-9 h-9 rounded-full bg-white/60 flex items-center justify-center text-guinda hover:bg-white/90 transition-colors">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+    </button>
+    <h2 class="font-display text-guinda text-lg" data-i18n="results-title">Resultados / Results</h2>
+    <button onclick="refreshUV()" class="w-9 h-9 rounded-full bg-white/60 flex items-center justify-center text-celeste hover:bg-white/90 transition-colors" title="Actualizar">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+    </button>
+  </div>
+
+  <!-- Tarjeta UV Principal -->
+  <div id="uv-card" class="rounded-3xl p-6 text-center shadow-xl card-enter" style="background: linear-gradient(135deg, #7B1D3A, #9B2D50);">
+    <p class="text-white/70 text-xs font-medium tracking-widest uppercase mb-1" data-i18n="uv-index-label">Índice UV · UV Index</p>
+    <div class="uv-badge text-white" id="uv-value">–</div>
+    <div id="uv-level-badge" class="inline-block mt-2 px-4 py-1 rounded-full text-sm font-semibold" style="background:rgba(255,255,255,0.2);color:white;" data-i18n="uv-level">Calculando...</div>
+    <div class="mt-4 flex justify-center gap-6 text-white/60 text-xs">
+      <div>
+        <p class="text-white font-medium" id="uv-ozone">–</p>
+        <p data-i18n="ozone">Ozono (DU)</p>
+      </div>
+      <div class="w-px bg-white/20"></div>
+      <div>
+        <p class="text-white font-medium" id="uv-time">–</p>
+        <p data-i18n="uv-time">Hora local</p>
+      </div>
+      <div class="w-px bg-white/20"></div>
+      <div>
+        <p class="text-white font-medium" id="uv-coords-display">–</p>
+        <p data-i18n="coords">Coordenadas</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Skin info badge -->
+  <div id="skin-badge-results" class="bg-white/80 rounded-2xl px-4 py-3 flex items-center gap-3 border border-guinda/10 shadow-sm">
+    <span class="text-2xl" id="skin-emoji-results">🧬</span>
+    <div class="flex-1">
+      <p class="text-xs text-guinda/50" data-i18n="skin-type">Tipo de piel</p>
+      <p class="text-sm font-semibold text-guinda" id="skin-type-results">–</p>
+    </div>
+    <span class="text-xs text-guinda/40" id="fitzpatrick-label">Fitzpatrick –</span>
+  </div>
+
+  <!-- Tarjetas de bienestar -->
+  <div id="wellness-cards" class="space-y-3 pb-6">
+    <!-- Se generan dinámicamente -->
+  </div>
+
+  <!-- Error API -->
+  <div id="api-error" class="hidden bg-red-50 border border-red-200 rounded-2xl p-4 text-center">
+    <p class="text-red-700 font-semibold text-sm" id="api-error-title" data-i18n="api-err-title">Error al consultar la API</p>
+    <p class="text-red-500 text-xs mt-1" id="api-error-msg"></p>
+    <button onclick="refreshUV()" class="mt-3 text-red-600 text-xs underline" data-i18n="retry">Reintentar</button>
+  </div>
+
+  <!-- Loading overlay -->
+  <div id="loading-overlay" class="hidden fixed inset-0 bg-crema/80 backdrop-blur-sm flex items-center justify-center z-50">
+    <div class="text-center">
+      <svg class="spin-slow mx-auto mb-3" width="48" height="48" viewBox="0 0 48 48" fill="none">
+        <circle cx="24" cy="24" r="18" stroke="#7B1D3A" stroke-width="3" stroke-dasharray="80 30"/>
+        <circle cx="24" cy="24" r="10" fill="#F5A07A"/>
+      </svg>
+      <p class="text-guinda font-medium text-sm" data-i18n="fetching">Consultando índice UV...</p>
+    </div>
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════════════════════════════════════════════════
+     JAVASCRIPT
+═══════════════════════════════════════════════════════════════════════════════ -->
+<script>
+// ── Configuración ─────────────────────────────────────────────────────────────
+const OPENUV_API_KEY = 'openuv-c74mrmuao0w3s-io';
+const API_BASE       = 'https://api.openuv.io/api/v1/uv';
+
+// ── Estado global ─────────────────────────────────────────────────────────────
+let currentLang = 'es';
+let deferredInstallPrompt = null;
+let skinType = 'medium'; // 'light' | 'medium' | 'dark'
+let fitzpatrick = 'III-IV';
+let userLat = null;
+let userLng = null;
+let cameraStream = null;
+
+// ── i18n ─────────────────────────────────────────────────────────────────────
+const i18n = {
+  es: {
+    'welcome-title': 'Monitor de Índice UV',
+    'welcome-sub':   'con análisis de tipo de piel en tiempo real',
+    'step1': 'Análisis facial de tu tipo de piel',
+    'step2': 'Geolocalización automática',
+    'step3': 'Recomendaciones personalizadas',
+    'btn-start': 'Comenzar análisis',
+    'btn-install': '📍 Instalar aplicación',
+    'disclaimer': 'Luzka usa tu cámara y GPS solo durante la sesión. Ningún dato se almacena.',
+    'camera-title': 'Sensor Biofacial',
+    'camera-sub': 'Escala de Fitzpatrick',
+    'bg-instruction': '<strong>Importante:</strong> Colócate frente a un <strong>fondo blanco</strong> para evitar interferencias en la lectura del color de piel.',
+    'scan-ready': 'Cámara lista. Presiona el botón para escanear.',
+    'analyzing': 'Analizando biotipo facial...',
+    'astep1': 'Capturando muestra',
+    'astep2': 'Procesando RGB',
+    'astep3': 'Clasificando',
+    'btn-scan': 'Escanear Piel / Scan Skin',
+    'btn-skip': 'Omitir',
+    'cam-err-title': 'Sin acceso a la cámara',
+    'cam-err-sub': 'Puedes continuar con tipo de piel "Mediana" por defecto.',
+    'btn-continue': 'Continuar de todas formas',
+    'loc-title': 'Ubicación',
+    'loc-sub': 'Para medir el Índice UV real',
+    'skin-detected': 'Tipo de piel detectado',
+    'btn-gps': 'Usar mi ubicación (GPS)',
+    'or-manual': 'o ingresa manualmente',
+    'btn-manual': 'Consultar Índice UV',
+    'gps-err': 'No se pudo obtener el GPS',
+    'gps-err-sub': 'Ingresa las coordenadas manualmente.',
+    'results-title': 'Resultados',
+    'uv-index-label': 'Índice UV · UV Index',
+    'uv-level': 'Calculando...',
+    'ozone': 'Ozono (DU)',
+    'uv-time': 'Hora local',
+    'coords': 'Coordenadas',
+    'skin-type': 'Tipo de piel',
+    'api-err-title': 'Error al consultar la API',
+    'retry': 'Reintentar',
+    'fetching': 'Consultando índice UV...',
+  },
+  en: {
+    'welcome-title': 'UV Index Monitor',
+    'welcome-sub':   'with real-time skin type analysis',
+    'step1': 'Facial skin type analysis',
+    'step2': 'Automatic geolocation',
+    'step3': 'Personalized recommendations',
+    'btn-start': 'Start analysis',
+    'btn-install': '📍 Install app',
+    'disclaimer': 'Luzka uses your camera and GPS only during the session. No data is stored.',
+    'camera-title': 'Biofacial Sensor',
+    'camera-sub': 'Fitzpatrick Scale',
+    'bg-instruction': '<strong>Important:</strong> Place yourself in front of a <strong>white background</strong> to avoid interference in skin tone reading.',
+    'scan-ready': 'Camera ready. Press the button to scan.',
+    'analyzing': 'Analyzing facial biotype...',
+    'astep1': 'Capturing sample',
+    'astep2': 'Processing RGB',
+    'astep3': 'Classifying',
+    'btn-scan': 'Scan Skin / Escanear Piel',
+    'btn-skip': 'Skip',
+    'cam-err-title': 'No camera access',
+    'cam-err-sub': 'You can continue with "Medium" skin type by default.',
+    'btn-continue': 'Continue anyway',
+    'loc-title': 'Location',
+    'loc-sub': 'To measure the real UV Index',
+    'skin-detected': 'Detected skin type',
+    'btn-gps': 'Use my location (GPS)',
+    'or-manual': 'or enter manually',
+    'btn-manual': 'Check UV Index',
+    'gps-err': 'Could not get GPS',
+    'gps-err-sub': 'Enter coordinates manually.',
+    'results-title': 'Results',
+    'uv-index-label': 'UV Index · Índice UV',
+    'uv-level': 'Calculating...',
+    'ozone': 'Ozone (DU)',
+    'uv-time': 'Local time',
+    'coords': 'Coordinates',
+    'skin-type': 'Skin type',
+    'api-err-title': 'API error',
+    'retry': 'Retry',
+    'fetching': 'Fetching UV index...',
+  }
+};
+
+function t(key) { return i18n[currentLang][key] || i18n['es'][key] || key; }
+
+function toggleLang() {
+  currentLang = currentLang === 'es' ? 'en' : 'es';
+  document.getElementById('lang-label').textContent = currentLang === 'es' ? 'EN' : 'ES';
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (i18n[currentLang][key]) el.innerHTML = i18n[currentLang][key];
+  });
+}
+
+// ── PWA Install ───────────────────────────────────────────────────────────────
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  const btn = document.getElementById('btn-install');
+  btn.classList.remove('hidden');
+  btn.classList.add('flex');
+});
+
+async function installPWA() {
+  if (!deferredInstallPrompt) return;
+  deferredInstallPrompt.prompt();
+  const { outcome } = await deferredInstallPrompt.userChoice;
+  if (outcome === 'accepted') {
+    document.getElementById('btn-install').classList.add('hidden');
+  }
+  deferredInstallPrompt = null;
+}
+
+window.addEventListener('appinstalled', () => {
+  document.getElementById('btn-install').classList.add('hidden');
+});
+
+// ── Service Worker ─────────────────────────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(reg => console.log('[Luzka] SW registrado:', reg.scope))
+      .catch(err => console.warn('[Luzka] SW error:', err));
+  });
+}
+
+// ── Navegación entre pantallas ─────────────────────────────────────────────────
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function goBack(screenId) {
+  if (screenId === 'screen-camera' || screenId === 'screen-welcome') {
+    stopCamera();
+  }
+  showScreen(screenId);
+}
+
+// ── Cámara ─────────────────────────────────────────────────────────────────────
+async function goToCamera() {
+  showScreen('screen-camera');
+  await startCamera();
+}
+
+async function startCamera() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 640 } }
+    });
+    cameraStream = stream;
+    const video = document.getElementById('video-feed');
+    video.srcObject = stream;
+    await video.play();
+    document.getElementById('camera-error').classList.add('hidden');
+  } catch (err) {
+    console.warn('[Luzka] Cámara no disponible:', err);
+    document.getElementById('camera-error').classList.remove('hidden');
+    document.getElementById('camera-ring').style.opacity = '0.4';
+  }
+}
+
+function stopCamera() {
+  if (cameraStream) {
+    cameraStream.getTracks().forEach(t => t.stop());
+    cameraStream = null;
+  }
+}
+
+// ── Análisis de piel ──────────────────────────────────────────────────────────
+function startScan() {
+  const video   = document.getElementById('video-feed');
+  const canvas  = document.getElementById('canvas-capture');
+  const ctx     = canvas.getContext('2d');
+  const scanAnim = document.getElementById('scan-anim');
+  const progressContainer = document.getElementById('progress-container');
+  const progressBar = document.getElementById('progress-bar');
+  const progressPct = document.getElementById('progress-pct');
+  const btnScan = document.getElementById('btn-scan');
+  const statusEl = document.getElementById('scan-status').querySelector('p');
+
+  btnScan.disabled = true;
+  btnScan.style.opacity = '0.5';
+  scanAnim.classList.remove('hidden');
+  progressContainer.classList.remove('hidden');
+
+  let realRgb = null;
+
+  // Intentar lectura real del pixel central
+  try {
+    if (video.videoWidth > 0 && video.readyState >= 2) {
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const cx = Math.floor(canvas.width / 2);
+      const cy = Math.floor(canvas.height / 2);
+      const sampleSize = 20;
+      const imageData = ctx.getImageData(cx - sampleSize, cy - sampleSize, sampleSize * 2, sampleSize * 2);
+      let rSum = 0, gSum = 0, bSum = 0, count = 0;
+      for (let i = 0; i < imageData.data.length; i += 4) {
+        rSum += imageData.data[i];
+        gSum += imageData.data[i + 1];
+        bSum += imageData.data[i + 2];
+        count++;
+      }
+      realRgb = { r: Math.round(rSum / count), g: Math.round(gSum / count), b: Math.round(bSum / count) };
+      console.log('[Luzka] RGB promedio capturado:', realRgb);
+    }
+  } catch (e) {
+    console.warn('[Luzka] No se pudo leer pixel central, usando simulación:', e);
+  }
+
+  // Animación de progreso
+  let pct = 0;
+  const steps = ['astep-1', 'astep-2', 'astep-3'];
+  const interval = setInterval(() => {
+    pct = Math.min(pct + 2, 100);
+    progressBar.style.width = pct + '%';
+    progressPct.textContent = pct + '%';
+    if (pct === 33) document.getElementById('astep-1').style.color = '#7B1D3A';
+    if (pct === 66) document.getElementById('astep-2').style.color = '#7B1D3A';
+    if (pct >= 90)  document.getElementById('astep-3').style.color = '#7B1D3A';
+    if (pct >= 100) {
+      clearInterval(interval);
+      scanAnim.classList.add('hidden');
+      classifySkin(realRgb);
+    }
+  }, 28);
+}
+
+function classifySkin(rgb) {
+  let result;
+  if (rgb) {
+    // Clasificación real basada en luminosidad
+    const luminance = (0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b);
+    if (luminance > 175) {
+      result = 'light';
+    } else if (luminance > 110) {
+      result = 'medium';
+    } else {
+      result = 'dark';
+    }
+    console.log('[Luzka] Luminancia:', luminance.toFixed(1), '→ Tipo:', result);
+  } else {
+    // Fallback simulado
+    const types = ['light', 'medium', 'medium', 'dark'];
+    result = types[Math.floor(Math.random() * types.length)];
+    console.log('[Luzka] Tipo de piel (simulado):', result);
+  }
+
+  skinType = result;
+  const labels = {
+    light:  { label: currentLang === 'es' ? 'Tez Clara / Light Tone' : 'Light Tone / Tez Clara', fitz: 'I-II', emoji: '🌸' },
+    medium: { label: currentLang === 'es' ? 'Tez Mediana / Medium Tone' : 'Medium Tone / Tez Mediana', fitz: 'III-IV', emoji: '🌻' },
+    dark:   { label: currentLang === 'es' ? 'Tez Oscura / Dark Tone' : 'Dark Tone / Tez Oscura', fitz: 'V-VI', emoji: '🌟' },
+  };
+  const info = labels[result];
+  fitzpatrick = info.fitz;
+
+  document.getElementById('scan-status').innerHTML = `
+    <div class="flex flex-col items-center gap-2 card-enter">
+      <span class="text-4xl">${info.emoji}</span>
+      <p class="font-semibold text-guinda">${info.label}</p>
+      <p class="text-xs text-guinda/50">Fitzpatrick ${info.fitz}</p>
+    </div>`;
+
+  setTimeout(() => {
+    stopCamera();
+    updateLocationScreen(info);
+    showScreen('screen-location');
+  }, 1800);
+}
+
+function updateLocationScreen(info) {
+  document.getElementById('skin-type-label').textContent = info.label;
+  document.getElementById('skin-emoji').textContent = info.emoji;
+}
+
+function skipCamera() {
+  stopCamera();
+  skinType = 'medium';
+  fitzpatrick = 'III-IV';
+  updateLocationScreen({ label: currentLang === 'es' ? 'Tez Mediana / Medium Tone' : 'Medium Tone', emoji: '🌻' });
+  showScreen('screen-location');
+}
+
+// ── Geolocalización ────────────────────────────────────────────────────────────
+function getGPS() {
+  const statusEl = document.getElementById('gps-status');
+  const errorEl  = document.getElementById('gps-error');
+  const btnGPS   = document.getElementById('btn-gps');
+
+  statusEl.textContent = currentLang === 'es' ? 'Obteniendo ubicación...' : 'Getting location...';
+  statusEl.classList.remove('hidden');
+  btnGPS.disabled = true;
+  btnGPS.style.opacity = '0.5';
+
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      userLat = pos.coords.latitude;
+      userLng = pos.coords.longitude;
+      statusEl.textContent = `✓ ${userLat.toFixed(4)}, ${userLng.toFixed(4)}`;
+      statusEl.classList.add('text-green-600');
+      setTimeout(() => fetchUV(userLat, userLng), 600);
+    },
+    (err) => {
+      console.warn('[Luzka] GPS error:', err);
+      errorEl.classList.remove('hidden');
+      statusEl.classList.add('hidden');
+      btnGPS.disabled = false;
+      btnGPS.style.opacity = '1';
+    },
+    { timeout: 10000, maximumAge: 60000 }
+  );
+}
+
+function useManualCoords() {
+  const lat = parseFloat(document.getElementById('input-lat').value);
+  const lng = parseFloat(document.getElementById('input-lng').value);
+  if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+    alert(currentLang === 'es' ? 'Ingresa coordenadas válidas.' : 'Enter valid coordinates.');
+    return;
+  }
+  userLat = lat;
+  userLng = lng;
+  fetchUV(lat, lng);
+}
+
+// ── API OpenUV ─────────────────────────────────────────────────────────────────
+async function fetchUV(lat, lng) {
+  showScreen('screen-results');
+  document.getElementById('loading-overlay').classList.remove('hidden');
+  document.getElementById('api-error').classList.add('hidden');
+
+  try {
+    const url = `${API_BASE}?lat=${lat}&lng=${lng}`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: { 'x-access-token': OPENUV_API_KEY }
+    });
+
+    if (response.status === 403) {
+      throw new Error(currentLang === 'es'
+        ? 'Límite de cuota alcanzado (HTTP 403). Inténtalo más tarde.'
+        : 'Quota limit reached (HTTP 403). Try again later.');
+    }
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
+    if (!data.result) throw new Error('Respuesta inesperada de la API');
+
+    document.getElementById('loading-overlay').classList.add('hidden');
+    renderResults(data.result, lat, lng);
+
+  } catch (err) {
+    console.error('[Luzka] API Error:', err);
+    document.getElementById('loading-overlay').classList.add('hidden');
+    const errDiv = document.getElementById('api-error');
+    errDiv.classList.remove('hidden');
+    document.getElementById('api-error-msg').textContent = err.message;
+  }
+}
+
+function refreshUV() {
+  if (userLat !== null && userLng !== null) {
+    fetchUV(userLat, userLng);
+  } else {
+    showScreen('screen-location');
+  }
+}
+
+// ── Renderizar resultados ─────────────────────────────────────────────────────
+function renderResults(data, lat, lng) {
+  const uvVal = data.uv ?? 0;
+  const uvMax = data.uv_max ?? 0;
+
+  // Clasificación OMS
+  const uvInfo = getUVInfo(uvVal);
+
+  // Tarjeta UV
+  const card = document.getElementById('uv-card');
+  card.style.background = uvInfo.gradient;
+  document.getElementById('uv-value').textContent = uvVal.toFixed(1);
+  const badge = document.getElementById('uv-level-badge');
+  badge.textContent = `${uvInfo.level} (máx. ${uvMax.toFixed(1)})`;
+  badge.style.background = 'rgba(255,255,255,0.25)';
+
+  // Ozono y tiempo
+  document.getElementById('uv-ozone').textContent = data.ozone ? data.ozone.toFixed(0) : '–';
+  const now = new Date();
+  document.getElementById('uv-time').textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  document.getElementById('uv-coords-display').textContent = `${lat.toFixed(2)}, ${lng.toFixed(2)}`;
+
+  // Skin badge
+  const skinLabels = {
+    light:  { label: currentLang === 'es' ? 'Tez Clara' : 'Light Tone', fitz: 'I-II', emoji: '🌸' },
+    medium: { label: currentLang === 'es' ? 'Tez Mediana' : 'Medium Tone', fitz: 'III-IV', emoji: '🌻' },
+    dark:   { label: currentLang === 'es' ? 'Tez Oscura' : 'Dark Tone', fitz: 'V-VI', emoji: '🌟' },
+  };
+  const sl = skinLabels[skinType];
+  document.getElementById('skin-emoji-results').textContent = sl.emoji;
+  document.getElementById('skin-type-results').textContent = sl.label;
+  document.getElementById('fitzpatrick-label').textContent = `Fitzpatrick ${sl.fitz}`;
+
+  // Tarjetas de bienestar
+  renderWellnessCards(uvVal, skinType, uvInfo);
+
+  // Extras: escala OMS + curva del día
+  setTimeout(() => renderResultExtras(uvVal, uvMax), 50);
+}
+
+function getUVInfo(uv) {
+  if (uv < 3) return {
+    level: currentLang === 'es' ? 'Bajo / Low' : 'Low / Bajo',
+    gradient: 'linear-gradient(135deg, #22863A, #38A169)',
+    color: '#22863A', emoji: '🌿'
+  };
+  if (uv < 6) return {
+    level: currentLang === 'es' ? 'Moderado / Moderate' : 'Moderate / Moderado',
+    gradient: 'linear-gradient(135deg, #B7791F, #D69E2E)',
+    color: '#B7791F', emoji: '☀️'
+  };
+  if (uv < 8) return {
+    level: currentLang === 'es' ? 'Alto / High' : 'High / Alto',
+    gradient: 'linear-gradient(135deg, #C05621, #DD6B20)',
+    color: '#C05621', emoji: '🔆'
+  };
+  if (uv < 11) return {
+    level: currentLang === 'es' ? 'Muy Alto / Very High' : 'Very High / Muy Alto',
+    gradient: 'linear-gradient(135deg, #9B2335, #C53030)',
+    color: '#9B2335', emoji: '🚨'
+  };
+  return {
+    level: currentLang === 'es' ? 'Extremo / Extreme' : 'Extreme / Extremo',
+    gradient: 'linear-gradient(135deg, #553C9A, #7B1D3A)',
+    color: '#553C9A', emoji: '☢️'
+  };
+}
+
+// ── Tarjetas de bienestar dinámicas ───────────────────────────────────────────
+function renderWellnessCards(uv, skin, uvInfo) {
+  const container = document.getElementById('wellness-cards');
+  container.innerHTML = '';
+
+  const cards = getWellnessRecommendations(uv, skin);
+  cards.forEach((card, i) => {
+    const el = document.createElement('div');
+    el.className = 'card-enter bg-white/90 rounded-2xl p-4 border border-guinda/10 shadow-sm flex gap-4 items-start';
+    el.style.animationDelay = `${i * 0.08}s`;
+    el.innerHTML = `
+      <div class="shrink-0 w-14 h-14 rounded-xl flex items-center justify-center" style="background:${card.bg}">
+        ${card.svg}
+      </div>
+      <div class="flex-1">
+        <p class="font-semibold text-guinda text-sm">${card.title}</p>
+        <p class="text-guinda/60 text-xs mt-1 leading-relaxed">${card.desc}</p>
+        ${card.tag ? `<span class="inline-block mt-1.5 text-xs px-2 py-0.5 rounded-full font-medium" style="background:${card.tagBg};color:${card.tagColor}">${card.tag}</span>` : ''}
+      </div>`;
+    container.appendChild(el);
+  });
+}
+
+function getWellnessRecommendations(uv, skin) {
+  const spf = skin === 'light' ? 50 : skin === 'medium' ? 30 : 15;
+  const maxTime = skin === 'light'
+    ? (uv < 3 ? '30 min' : uv < 6 ? '15 min' : uv < 8 ? '8 min' : '4 min')
+    : skin === 'medium'
+    ? (uv < 3 ? '60 min' : uv < 6 ? '30 min' : uv < 8 ? '15 min' : '8 min')
+    : (uv < 3 ? '90 min' : uv < 6 ? '60 min' : uv < 8 ? '30 min' : '15 min');
+
+  const lang = currentLang;
+  const cards = [];
+
+  // 1. Bloqueador solar
+  cards.push({
+    bg: '#FEF3E2',
+    title: lang === 'es' ? `Protector Solar FPS ${spf}+` : `Sunscreen SPF ${spf}+`,
+    desc: lang === 'es'
+      ? `Para tu tez ${skin === 'light' ? 'clara' : skin === 'medium' ? 'mediana' : 'oscura'}, aplica FPS ${spf} mínimo cada 2 horas en zonas expuestas.`
+      : `For your ${skin === 'light' ? 'light' : skin === 'medium' ? 'medium' : 'dark'} tone, apply SPF ${spf} at least every 2 hours on exposed areas.`,
+    tag: `FPS ${spf}+`,
+    tagBg: '#FED7AA', tagColor: '#92400E',
+    svg: `<svg width="32" height="32" viewBox="0 0 40 40" fill="none" class="drip">
+      <rect x="12" y="6" width="16" height="26" rx="5" fill="#F5A07A"/>
+      <rect x="15" y="2" width="10" height="6" rx="3" fill="#E07850"/>
+      <rect x="14" y="15" width="12" height="3" rx="1.5" fill="#FFF" opacity=".6"/>
+      <ellipse cx="20" cy="36" rx="5" ry="2" fill="#F5A07A" opacity=".3"/>
+    </svg>`
+  });
+
+  // 2. Sombrero
+  if (uv >= 3) {
+    cards.push({
+      bg: '#EBF5FF',
+      title: lang === 'es' ? 'Usa sombrero de ala ancha' : 'Wide-brim hat recommended',
+      desc: lang === 'es'
+        ? 'Un sombrero con ala de al menos 7 cm reduce la exposición UV en cara, cuello y orejas hasta un 73%.'
+        : 'A hat with at least 7 cm brim reduces UV exposure on face, neck, and ears by up to 73%.',
+      tag: lang === 'es' ? '−73% UV facial' : '−73% facial UV',
+      tagBg: '#DBEAFE', tagColor: '#1D4ED8',
+      svg: `<svg width="32" height="32" viewBox="0 0 40 40" fill="none" class="bob">
+        <ellipse cx="20" cy="28" rx="17" ry="5" fill="#3B9EC4" opacity=".8"/>
+        <ellipse cx="20" cy="26" rx="10" ry="4" fill="#3B9EC4"/>
+        <path d="M10 26 Q20 14 30 26" fill="#2A7A9A"/>
+        <ellipse cx="20" cy="14" rx="8" ry="3" fill="#3B9EC4"/>
+      </svg>`
+    });
+  }
+
+  // 3. Gafas de sol
+  if (uv >= 3) {
+    cards.push({
+      bg: '#F0FFF4',
+      title: lang === 'es' ? 'Lentes UV400' : 'UV400 Sunglasses',
+      desc: lang === 'es'
+        ? 'Los lentes con protección UV400 bloquean el 100% de los rayos UVA y UVB, previniendo cataratas y daño macular.'
+        : 'UV400 lenses block 100% of UVA and UVB rays, preventing cataracts and macular damage.',
+      tag: 'UV400',
+      tagBg: '#DCFCE7', tagColor: '#15803D',
+      svg: `<svg width="32" height="32" viewBox="0 0 40 40" fill="none">
+        <ellipse cx="13" cy="22" rx="8" ry="6" fill="none" stroke="#7B1D3A" stroke-width="2.5"/>
+        <ellipse cx="27" cy="22" rx="8" ry="6" fill="none" stroke="#7B1D3A" stroke-width="2.5"/>
+        <line x1="21" y1="22" x2="19" y2="22" stroke="#7B1D3A" stroke-width="2"/>
+        <line x1="5" y1="22" x2="5" y2="19" stroke="#7B1D3A" stroke-width="2" stroke-linecap="round"/>
+        <line x1="35" y1="22" x2="35" y2="19" stroke="#7B1D3A" stroke-width="2" stroke-linecap="round"/>
+        <ellipse cx="13" cy="22" rx="5" ry="3.5" fill="#3B9EC4" opacity=".35"/>
+        <ellipse cx="27" cy="22" rx="5" ry="3.5" fill="#3B9EC4" opacity=".35"/>
+      </svg>`
+    });
+  }
+
+  // 4. Hidratación
+  cards.push({
+    bg: '#EFF6FF',
+    title: lang === 'es' ? 'Hidratación constante' : 'Stay hydrated',
+    desc: lang === 'es'
+      ? `Con índice UV ${uv.toFixed(1)}, el cuerpo pierde líquidos más rápido. Bebe al menos ${uv >= 8 ? '3' : '2'} litros de agua durante el día.`
+      : `At UV index ${uv.toFixed(1)}, your body loses fluids faster. Drink at least ${uv >= 8 ? '3' : '2'} liters of water throughout the day.`,
+    tag: `${uv >= 8 ? '3' : '2'}L ${lang === 'es' ? 'mínimo' : 'minimum'}`,
+    tagBg: '#DBEAFE', tagColor: '#1D4ED8',
+    svg: `<svg width="32" height="32" viewBox="0 0 40 40" fill="none" class="drip">
+      <path d="M20 8 C20 8 10 20 10 26 A10 10 0 0 0 30 26 C30 20 20 8 20 8Z" fill="#3B9EC4" opacity=".8"/>
+      <path d="M20 18 C20 18 14 24 14 27 A6 6 0 0 0 26 27 C26 24 20 18 20 18Z" fill="#5DB8D8" opacity=".5"/>
+    </svg>`
+  });
+
+  // 5. Evitar exposición directa (solo UV alto/extremo)
+  if (uv >= 6) {
+    cards.push({
+      bg: '#FFF5F5',
+      title: lang === 'es' ? 'Evita el sol entre 10am–4pm' : 'Avoid sun 10am–4pm',
+      desc: lang === 'es'
+        ? `Con índice ${uv.toFixed(1)} (${getUVInfo(uv).level.split('/')[0].trim()}), el tiempo máximo de exposición sin protección es de ${maxTime}. Busca sombra o permanece en interiores.`
+        : `At index ${uv.toFixed(1)} (${getUVInfo(uv).level.split('/')[1]?.trim() || ''}), max safe exposure without protection is ${maxTime}. Seek shade or stay indoors.`,
+      tag: lang === 'es' ? `Exp. máx. sin protección: ${maxTime}` : `Max unprotected: ${maxTime}`,
+      tagBg: '#FEE2E2', tagColor: '#991B1B',
+      svg: `<svg width="32" height="32" viewBox="0 0 40 40" fill="none">
+        <circle cx="20" cy="20" r="9" fill="#F5A07A" opacity=".6"/>
+        <g stroke="#7B1D3A" stroke-width="2" stroke-linecap="round">
+          <line x1="20" y1="5" x2="20" y2="9"/>
+          <line x1="20" y1="31" x2="20" y2="35"/>
+          <line x1="5" y1="20" x2="9" y2="20"/>
+          <line x1="31" y1="20" x2="35" y2="20"/>
+          <line x1="9.4" y1="9.4" x2="12.3" y2="12.3"/>
+          <line x1="27.7" y1="27.7" x2="30.6" y2="30.6"/>
+          <line x1="30.6" y1="9.4" x2="27.7" y2="12.3"/>
+          <line x1="12.3" y1="27.7" x2="9.4" y2="30.6"/>
+        </g>
+        <line x1="10" y1="10" x2="30" y2="30" stroke="#C53030" stroke-width="2.5" stroke-linecap="round"/>
+      </svg>`
+    });
+  }
+
+  return cards;
+}
+
+// ── Barra de escala UV visual ─────────────────────────────────────────────────
+function renderUVScale(uv) {
+  const levels = [
+    { max: 3,  label: currentLang === 'es' ? 'Bajo' : 'Low',      color: '#22863A' },
+    { max: 6,  label: currentLang === 'es' ? 'Moderado' : 'Mod.', color: '#B7791F' },
+    { max: 8,  label: currentLang === 'es' ? 'Alto' : 'High',     color: '#C05621' },
+    { max: 11, label: currentLang === 'es' ? 'Muy Alto' : 'V.High',color: '#C53030' },
+    { max: 99, label: currentLang === 'es' ? 'Extremo' : 'Extreme',color: '#553C9A' },
+  ];
+  const pct = Math.min((uv / 12) * 100, 100);
+  const container = document.createElement('div');
+  container.className = 'card-enter bg-white/90 rounded-2xl p-4 border border-guinda/10 shadow-sm';
+  container.innerHTML = `
+    <p class="text-xs font-semibold text-guinda/60 mb-2 uppercase tracking-wide">
+      ${currentLang === 'es' ? 'Escala de riesgo UV (OMS)' : 'UV Risk Scale (WHO)'}
+    </p>
+    <div class="relative h-4 rounded-full overflow-hidden mb-2" style="background:linear-gradient(to right,#22863A,#B7791F,#C05621,#C53030,#553C9A);">
+      <div class="absolute top-0 h-full w-1 rounded-full bg-white shadow-md transition-all" style="left:calc(${pct}% - 2px);"></div>
+    </div>
+    <div class="flex justify-between text-xs text-guinda/50 font-medium">
+      ${levels.map(l => `<span style="color:${l.color}">${l.label}</span>`).join('')}
+    </div>`;
+  document.getElementById('wellness-cards').prepend(container);
+}
+
+// ── Gráfica de UV máximo del día ──────────────────────────────────────────────
+function renderUVChart(uvMax) {
+  const hours = ['6am','8am','10am','12pm','2pm','4pm','6pm'];
+  // Curva gaussiana simulada centrada al mediodía
+  const values = hours.map((_, i) => {
+    const t = i / (hours.length - 1);
+    return +(uvMax * Math.exp(-Math.pow((t - 0.5) * 3.8, 2))).toFixed(1);
+  });
+
+  const maxV = Math.max(...values, 1);
+  const barH = 50;
+  const bars = values.map((v, i) => {
+    const h = Math.round((v / maxV) * barH);
+    const uvI = getUVInfo(v);
+    const isNow = i === 3; // mediodía marcado
+    return `
+      <div class="flex flex-col items-center gap-1 flex-1">
+        <span class="text-xs font-medium" style="color:${uvI.color}">${v}</span>
+        <div class="w-full rounded-t-md transition-all" style="height:${h}px;background:${uvI.color};opacity:${isNow ? 1 : 0.55};"></div>
+        <span class="text-xs text-guinda/40">${hours[i]}</span>
+      </div>`;
+  }).join('');
+
+  const container = document.createElement('div');
+  container.className = 'card-enter bg-white/90 rounded-2xl p-4 border border-guinda/10 shadow-sm';
+  container.innerHTML = `
+    <p class="text-xs font-semibold text-guinda/60 mb-3 uppercase tracking-wide">
+      ${currentLang === 'es' ? 'Curva UV estimada del día' : 'Estimated UV curve today'}
+    </p>
+    <div class="flex items-end gap-1 h-16">${bars}</div>`;
+  document.getElementById('wellness-cards').appendChild(container);
+}
+
+// ── Extras post-cards (llamado desde renderResults al final) ──────────────────
+function renderResultExtras(uvVal, uvMax) {
+  renderUVScale(uvVal);
+  renderUVChart(uvMax);
+}
+
+// ── Notificación de actualización SW ─────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    showToast(currentLang === 'es' ? 'App actualizada ✓' : 'App updated ✓', '#22863A');
+  });
+}
+
+// ── Toast helper ──────────────────────────────────────────────────────────────
+function showToast(msg, color = '#7B1D3A') {
+  const toast = document.createElement('div');
+  toast.textContent = msg;
+  toast.style.cssText = `
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
+    background:${color}; color:#fff; padding:10px 22px; border-radius:24px;
+    font-size:13px; font-weight:600; z-index:9999; box-shadow:0 4px 16px rgba(0,0,0,.2);
+    opacity:0; transition:opacity .3s; white-space:nowrap;
+    font-family:'DM Sans',system-ui,sans-serif;`;
+  document.body.appendChild(toast);
+  requestAnimationFrame(() => { toast.style.opacity = '1'; });
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    setTimeout(() => toast.remove(), 400);
+  }, 2800);
+}
+
+// ── Detectar tema oscuro del sistema ─────────────────────────────────────────
+(function applyDark() {
+  // No aplicamos dark-mode completo por ahora (paleta institucional clara)
+  // pero respetamos reduced-motion
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    const style = document.createElement('style');
+    style.textContent = `.spin-slow,.bob,.drip,.fill-bar,.scan-line { animation: none !important; }`;
+    document.head.appendChild(style);
+  }
+})();
+
+// ── Inicialización ────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  // Mostrar pantalla de bienvenida
+  showScreen('screen-welcome');
+
+  // Revelar botón de instalación si ya había prompt guardado
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredInstallPrompt = e;
+    const btn = document.getElementById('btn-install');
+    btn.classList.remove('hidden');
+    btn.classList.add('flex');
+  });
+
+  // iOS: detectar si ya está instalada como PWA
+  if (window.navigator.standalone === true) {
+    document.getElementById('btn-install')?.classList.add('hidden');
+  }
+
+  console.log('%c🌞 Luzka v1.0 – Monitor UV', 'color:#7B1D3A;font-weight:bold;font-size:14px;');
+  console.log('%cPaleta UPCH: Guinda #7B1D3A · Durazno #F5A07A · Crema #F5ECD7 · Celeste #3B9EC4', 'color:#F5A07A;font-size:11px;');
+});
+</script>
+</body>
+</html>
