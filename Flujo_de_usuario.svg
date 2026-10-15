@@ -1,0 +1,115 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 260" width="900" height="260" font-family="'Segoe UI', Arial, sans-serif">
+  <!-- Background -->
+  <rect width="900" height="260" rx="16" fill="#F5ECD7"/>
+
+  <!-- Title -->
+  <text x="450" y="32" text-anchor="middle" font-size="15" font-weight="700" fill="#7B1D3A" letter-spacing="1">FLUJO DE USUARIO · LUZKA</text>
+
+  <!-- ── CARD 1: Bienvenida ── -->
+  <g transform="translate(30, 52)">
+    <rect width="170" height="170" rx="14" fill="#7B1D3A" filter="url(#shadow)"/>
+    <rect x="8" y="8" width="154" height="154" rx="10" fill="#8C2244" opacity="0.6"/>
+    <!-- Icon: sun -->
+    <circle cx="85" cy="58" r="22" fill="#F5A07A" opacity="0.95"/>
+    <g stroke="#F5A07A" stroke-width="3" opacity="0.7">
+      <line x1="85" y1="28" x2="85" y2="20"/>
+      <line x1="85" y1="96" x2="85" y2="88"/>
+      <line x1="55" y1="58" x2="47" y2="58"/>
+      <line x1="123" y1="58" x2="115" y2="58"/>
+      <line x1="64" y1="37" x2="58" y2="31"/>
+      <line x1="112" y1="85" x2="106" y2="79"/>
+      <line x1="106" y1="37" x2="112" y2="31"/>
+      <line x1="58" y1="85" x2="64" y2="79"/>
+    </g>
+    <!-- Step badge -->
+    <circle cx="28" cy="28" r="13" fill="#F5A07A"/>
+    <text x="28" y="33" text-anchor="middle" font-size="13" font-weight="800" fill="#7B1D3A">1</text>
+    <!-- Labels -->
+    <text x="85" y="102" text-anchor="middle" font-size="13" font-weight="700" fill="#F5ECD7">Bienvenida</text>
+    <text x="85" y="120" text-anchor="middle" font-size="10" fill="#F5A07A">☀ Logo Luzka</text>
+    <text x="85" y="135" text-anchor="middle" font-size="10" fill="#F5A07A">📋 Pasos rápidos</text>
+    <text x="85" y="150" text-anchor="middle" font-size="10" fill="#F5A07A">📲 Instalar app</text>
+  </g>
+
+  <!-- Arrow 1→2 -->
+  <g transform="translate(208, 130)">
+    <line x1="0" y1="7" x2="42" y2="7" stroke="#7B1D3A" stroke-width="2.5" stroke-dasharray="5,3"/>
+    <polygon points="42,1 54,7 42,13" fill="#7B1D3A"/>
+  </g>
+
+  <!-- ── CARD 2: Cámara ── -->
+  <g transform="translate(270, 52)">
+    <rect width="170" height="170" rx="14" fill="#7B1D3A" filter="url(#shadow)"/>
+    <rect x="8" y="8" width="154" height="154" rx="10" fill="#8C2244" opacity="0.6"/>
+    <!-- Icon: camera circle -->
+    <circle cx="85" cy="60" r="24" fill="none" stroke="#F5A07A" stroke-width="3"/>
+    <circle cx="85" cy="60" r="14" fill="#F5A07A" opacity="0.4"/>
+    <circle cx="85" cy="60" r="7" fill="#F5A07A"/>
+    <!-- Step badge -->
+    <circle cx="28" cy="28" r="13" fill="#F5A07A"/>
+    <text x="28" y="33" text-anchor="middle" font-size="13" font-weight="800" fill="#7B1D3A">2</text>
+    <!-- Labels -->
+    <text x="85" y="103" text-anchor="middle" font-size="13" font-weight="700" fill="#F5ECD7">Sensor Biofacial</text>
+    <text x="85" y="121" text-anchor="middle" font-size="10" fill="#F5A07A">📷 Feed cámara</text>
+    <text x="85" y="136" text-anchor="middle" font-size="10" fill="#F5A07A">📊 Barra análisis</text>
+    <text x="85" y="151" text-anchor="middle" font-size="10" fill="#F5A07A">🎨 Fitzpatrick I–VI</text>
+  </g>
+
+  <!-- Arrow 2→3 -->
+  <g transform="translate(448, 130)">
+    <line x1="0" y1="7" x2="42" y2="7" stroke="#7B1D3A" stroke-width="2.5" stroke-dasharray="5,3"/>
+    <polygon points="42,1 54,7 42,13" fill="#7B1D3A"/>
+  </g>
+
+  <!-- ── CARD 3: Ubicación ── -->
+  <g transform="translate(510, 52)">
+    <rect width="170" height="170" rx="14" fill="#3B9EC4" filter="url(#shadow)"/>
+    <rect x="8" y="8" width="154" height="154" rx="10" fill="#4aadd4" opacity="0.5"/>
+    <!-- Icon: map pin -->
+    <path d="M85 35 C72 35 62 45 62 57 C62 72 85 92 85 92 C85 92 108 72 108 57 C108 45 98 35 85 35Z" fill="#F5ECD7"/>
+    <circle cx="85" cy="57" r="9" fill="#3B9EC4"/>
+    <!-- Step badge -->
+    <circle cx="28" cy="28" r="13" fill="#F5ECD7"/>
+    <text x="28" y="33" text-anchor="middle" font-size="13" font-weight="800" fill="#3B9EC4">3</text>
+    <!-- Labels -->
+    <text x="85" y="103" text-anchor="middle" font-size="13" font-weight="700" fill="#F5ECD7">Mi Ubicación</text>
+    <text x="85" y="121" text-anchor="middle" font-size="10" fill="#F5ECD7">📍 Botón GPS</text>
+    <text x="85" y="136" text-anchor="middle" font-size="10" fill="#F5ECD7">🗺 Mapa Leaflet</text>
+    <text x="85" y="151" text-anchor="middle" font-size="10" fill="#F5ECD7">📌 Pin movible</text>
+  </g>
+
+  <!-- Arrow 3→4 -->
+  <g transform="translate(688, 130)">
+    <line x1="0" y1="7" x2="42" y2="7" stroke="#7B1D3A" stroke-width="2.5" stroke-dasharray="5,3"/>
+    <polygon points="42,1 54,7 42,13" fill="#7B1D3A"/>
+  </g>
+
+  <!-- ── CARD 4: Resultados ── -->
+  <g transform="translate(748, 52)">
+    <rect width="120" height="170" rx="14" fill="#F5A07A" filter="url(#shadow)"/>
+    <rect x="8" y="8" width="104" height="154" rx="10" fill="#f7b890" opacity="0.5"/>
+    <!-- Icon: chart bars -->
+    <rect x="30" y="75" width="12" height="20" rx="2" fill="#7B1D3A" opacity="0.8"/>
+    <rect x="48" y="62" width="12" height="33" rx="2" fill="#7B1D3A" opacity="0.9"/>
+    <rect x="66" y="50" width="12" height="45" rx="2" fill="#7B1D3A"/>
+    <line x1="25" y1="95" x2="85" y2="95" stroke="#7B1D3A" stroke-width="1.5" opacity="0.4"/>
+    <!-- Step badge -->
+    <circle cx="25" cy="25" r="13" fill="#7B1D3A"/>
+    <text x="25" y="30" text-anchor="middle" font-size="13" font-weight="800" fill="#F5ECD7">4</text>
+    <!-- Labels -->
+    <text x="60" y="107" text-anchor="middle" font-size="12" font-weight="700" fill="#7B1D3A">Resultados</text>
+    <text x="60" y="123" text-anchor="middle" font-size="9.5" fill="#7B1D3A">☀ Índice UV</text>
+    <text x="60" y="137" text-anchor="middle" font-size="9.5" fill="#7B1D3A">📈 Escala OMS</text>
+    <text x="60" y="151" text-anchor="middle" font-size="9.5" fill="#7B1D3A">💊 Consejos</text>
+  </g>
+
+  <!-- Footer note -->
+  <text x="450" y="242" text-anchor="middle" font-size="11" fill="#7B1D3A" opacity="0.6">Desarrollado por Milena · Facultad de Ingeniería Industrial · UPCH</text>
+
+  <!-- Drop shadow filter -->
+  <defs>
+    <filter id="shadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="3" stdDeviation="5" flood-color="#7B1D3A" flood-opacity="0.18"/>
+    </filter>
+  </defs>
+</svg>
