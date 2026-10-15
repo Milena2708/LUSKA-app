@@ -144,18 +144,17 @@ Regístrate o gestiona tu clave en: [openuv.io](https://www.openuv.io)
 ---
 
 ## 📱 Flujo de usuario
-
-```
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐    ┌──────────────────┐
-│   Bienvenida    │ →  │ Sensor Biofacial │ →  │  Mi Ubicación   │ →  │   Resultados     │
-│                 │    │                  │    │                 │    │                  │
-│  Logo Luzka     │    │  Feed cámara     │    │  Botón GPS      │    │  Índice UV       │
-│  Pasos rápidos  │    │  circular        │    │  Mapa Leaflet   │    │  Escala OMS      │
-│  Btn Instalar   │    │  Barra análisis  │    │  Dirección real │    │  Curva del día   │
-│                 │    │  Fitzpatrick     │    │  Pin movible    │    │  Cards bienestar │
-└─────────────────┘    └──────────────────┘    └─────────────────┘    └──────────────────┘
-```
-
+<div align="center">
+![Flujo de usuario Luzka](user-flow.svg)
+ 
+</div>
+| Paso | Pantalla | Qué hace el usuario |
+|------|----------|---------------------|
+| **1** | 🌅 **Bienvenida** | Lee el resumen de la app, instala la PWA si desea |
+| **2** | 📷 **Sensor Biofacial** | Apunta la cámara al rostro — el análisis es automático |
+| **3** | 📍 **Mi Ubicación** | Activa el GPS y ajusta el pin en el mapa si es necesario |
+| **4** | ☀️ **Resultados** | Visualiza su índice UV, escala OMS y recomendaciones personalizadas |
+ 
 ---
 
 ## ⚠️ Permisos requeridos
