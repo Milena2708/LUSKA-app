@@ -19,6 +19,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
 
+  <!-- Leaflet.js – mapa interactivo -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js"></script>
+
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -116,6 +120,25 @@
     .spin-slow { animation: spin-slow 8s linear infinite; }
     .bob       { animation: bob 2s ease-in-out infinite; }
     .drip      { animation: drip 2.5s ease-in-out infinite; }
+
+    /* ── Mapa Leaflet – overrides de estilo ─────────────────────────────────── */
+    #leaflet-map .leaflet-control-attribution {
+      font-size: 9px;
+      background: rgba(245,236,215,0.85);
+      color: #7B1D3A;
+    }
+    #leaflet-map .leaflet-control-zoom a {
+      background: #F5ECD7;
+      color: #7B1D3A;
+      border-color: rgba(123,29,58,0.2);
+      font-weight: 700;
+    }
+    #leaflet-map .leaflet-control-zoom a:hover {
+      background: #7B1D3A;
+      color: #F5ECD7;
+    }
+    #map-container { display: none; flex-direction: column; gap: 12px; width: 100%; }
+    #map-container.visible { display: flex; }
 
     /* ── Tooltip bilingüe ───────────────────────────────────────────────────── */
     .lang-toggle span { transition: opacity 0.3s; }
@@ -283,23 +306,23 @@
 
 
 <!-- ════════════════════════════════════════════════════════════════════════════
-     PANTALLA 3 – GEOLOCALIZACIÓN
+     PANTALLA 3 – GEOLOCALIZACIÓN + MAPA
 ═══════════════════════════════════════════════════════════════════════════════ -->
-<section id="screen-location" class="screen flex-col items-center px-6 py-8 gap-6" style="background: linear-gradient(160deg, #F5ECD7 0%, #D8EEF5 100%);">
+<section id="screen-location" class="screen flex-col items-center px-4 py-6 gap-4" style="background: linear-gradient(160deg, #F5ECD7 0%, #D8EEF5 100%);">
 
   <!-- Header -->
-  <div class="w-full flex items-center gap-3">
+  <div class="w-full flex items-center gap-3 px-2">
     <button onclick="goBack('screen-camera')" class="w-9 h-9 rounded-full bg-celeste/10 flex items-center justify-center text-celeste hover:bg-celeste/20 transition-colors">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
     </button>
     <div>
-      <h2 class="font-display text-guinda text-xl" data-i18n="loc-title">Ubicación</h2>
+      <h2 class="font-display text-guinda text-xl" data-i18n="loc-title">Mi Ubicación</h2>
       <p class="text-xs text-guinda/50" data-i18n="loc-sub">Para medir el Índice UV real</p>
     </div>
   </div>
 
   <!-- Skin result pill -->
-  <div id="skin-result-pill" class="bg-guinda/10 border border-guinda/20 rounded-2xl px-4 py-2.5 flex items-center gap-2">
+  <div class="w-full bg-guinda/10 border border-guinda/20 rounded-2xl px-4 py-2.5 flex items-center gap-2">
     <span class="text-lg" id="skin-emoji">🧬</span>
     <div>
       <p class="text-xs text-guinda/50" data-i18n="skin-detected">Tipo de piel detectado</p>
@@ -307,45 +330,54 @@
     </div>
   </div>
 
-  <!-- GPS automático -->
-  <div class="w-full max-w-xs">
-    <button onclick="getGPS()" id="btn-gps" class="w-full bg-celeste text-white font-semibold py-4 rounded-2xl shadow-lg hover:bg-celeste-dark active:scale-95 transition-all flex items-center justify-center gap-2 mb-4">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-        <circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/>
-        <line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/>
-      </svg>
-      <span data-i18n="btn-gps">Usar mi ubicación (GPS)</span>
-    </button>
+  <!-- Botón GPS -->
+  <button onclick="getGPS()" id="btn-gps" class="w-full bg-celeste text-white font-semibold py-4 rounded-2xl shadow-lg hover:bg-celeste-dark active:scale-95 transition-all flex items-center justify-center gap-2">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+      <circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/>
+      <line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/>
+    </svg>
+    <span data-i18n="btn-gps">Detectar mi ubicación (GPS)</span>
+  </button>
 
-    <div class="flex items-center gap-3 my-2">
-      <div class="flex-1 h-px bg-guinda/15"></div>
-      <span class="text-xs text-guinda/40" data-i18n="or-manual">o ingresa manualmente</span>
-      <div class="flex-1 h-px bg-guinda/15"></div>
-    </div>
-
-    <!-- Inputs manuales -->
-    <div class="space-y-3 mt-3">
-      <div>
-        <label class="text-xs font-medium text-guinda/60 mb-1 block">Latitud / Latitude</label>
-        <input type="number" id="input-lat" step="0.0001" placeholder="-12.0464" class="w-full bg-white/80 border border-guinda/20 rounded-xl px-4 py-3 text-sm text-guinda placeholder:text-guinda/30 focus:outline-none focus:ring-2 focus:ring-guinda/30" />
-      </div>
-      <div>
-        <label class="text-xs font-medium text-guinda/60 mb-1 block">Longitud / Longitude</label>
-        <input type="number" id="input-lng" step="0.0001" placeholder="-77.0428" class="w-full bg-white/80 border border-guinda/20 rounded-xl px-4 py-3 text-sm text-guinda placeholder:text-guinda/30 focus:outline-none focus:ring-2 focus:ring-guinda/30" />
-      </div>
-      <button onclick="useManualCoords()" class="w-full bg-guinda text-crema font-semibold py-3.5 rounded-2xl hover:bg-guinda-dark active:scale-95 transition-all text-sm" data-i18n="btn-manual">
-        Consultar Índice UV
-      </button>
-    </div>
+  <!-- Estado GPS mientras carga -->
+  <div id="gps-status" class="hidden w-full bg-white/70 rounded-2xl px-4 py-3 flex items-center gap-3 border border-celeste/20">
+    <svg class="spin-slow shrink-0" width="20" height="20" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="9" stroke="#3B9EC4" stroke-width="2.5" stroke-dasharray="40 20"/>
+    </svg>
+    <span class="text-sm text-celeste font-medium" id="gps-status-text">Obteniendo ubicación...</span>
   </div>
 
-  <!-- Estado GPS -->
-  <div id="gps-status" class="text-sm text-guinda/60 text-center hidden"></div>
+  <!-- MAPA (oculto hasta tener coordenadas) -->
+  <div id="map-container" class="hidden w-full flex-col gap-3">
+
+    <!-- Dirección geocodificada -->
+    <div class="w-full bg-white/90 rounded-2xl px-4 py-3 flex items-start gap-3 border border-guinda/10 shadow-sm">
+      <span class="text-xl mt-0.5 shrink-0">📍</span>
+      <div class="flex-1 min-w-0">
+        <p class="text-xs text-guinda/50 mb-0.5" id="address-label">Ubicación detectada</p>
+        <p class="text-sm font-semibold text-guinda leading-snug" id="address-text">–</p>
+        <p class="text-xs text-guinda/40 mt-0.5" id="coords-text">–</p>
+      </div>
+    </div>
+
+    <!-- Mapa Leaflet -->
+    <div id="leaflet-map" style="width:100%;height:240px;border-radius:18px;overflow:hidden;border:2px solid rgba(123,29,58,0.15);box-shadow:0 4px 20px rgba(0,0,0,0.1);"></div>
+
+    <!-- Botón confirmar -->
+    <button onclick="confirmLocation()" class="w-full bg-guinda text-crema font-semibold py-4 rounded-2xl shadow-lg hover:bg-guinda-dark active:scale-95 transition-all flex items-center justify-center gap-2">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+      <span data-i18n="btn-confirm-loc">Confirmar y ver Índice UV</span>
+    </button>
+  </div>
 
   <!-- Error GPS -->
-  <div id="gps-error" class="hidden w-full max-w-xs bg-amber-50 border border-amber-200 rounded-2xl p-4">
-    <p class="text-amber-700 text-sm font-medium" data-i18n="gps-err">No se pudo obtener el GPS</p>
-    <p class="text-amber-500 text-xs mt-1" data-i18n="gps-err-sub">Ingresa las coordenadas manualmente.</p>
+  <div id="gps-error" class="hidden w-full bg-amber-50 border border-amber-200 rounded-2xl p-4 text-center">
+    <p class="text-2xl mb-1">😕</p>
+    <p class="text-amber-700 text-sm font-semibold" data-i18n="gps-err">No se pudo obtener el GPS</p>
+    <p class="text-amber-500 text-xs mt-1 mb-3" data-i18n="gps-err-sub">Asegúrate de dar permiso de ubicación al navegador e intenta de nuevo.</p>
+    <button onclick="getGPS()" class="bg-amber-500 text-white text-sm px-5 py-2 rounded-xl font-semibold" data-i18n="retry">Reintentar</button>
   </div>
 </section>
 
@@ -382,9 +414,9 @@
         <p data-i18n="uv-time">Hora local</p>
       </div>
       <div class="w-px bg-white/20"></div>
-      <div>
-        <p class="text-white font-medium" id="uv-coords-display">–</p>
-        <p data-i18n="coords">Coordenadas</p>
+      <div class="max-w-[100px]">
+        <p class="text-white font-medium text-xs leading-tight" id="uv-coords-display" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">–</p>
+        <p data-i18n="coords">Ubicación</p>
       </div>
     </div>
   </div>
@@ -468,11 +500,10 @@ const i18n = {
     'loc-title': 'Ubicación',
     'loc-sub': 'Para medir el Índice UV real',
     'skin-detected': 'Tipo de piel detectado',
-    'btn-gps': 'Usar mi ubicación (GPS)',
-    'or-manual': 'o ingresa manualmente',
-    'btn-manual': 'Consultar Índice UV',
+    'btn-gps': 'Detectar mi ubicación (GPS)',
+    'btn-confirm-loc': 'Confirmar y ver Índice UV',
     'gps-err': 'No se pudo obtener el GPS',
-    'gps-err-sub': 'Ingresa las coordenadas manualmente.',
+    'gps-err-sub': 'Asegúrate de dar permiso de ubicación al navegador e intenta de nuevo.',
     'results-title': 'Resultados',
     'uv-index-label': 'Índice UV · UV Index',
     'uv-level': 'Calculando...',
@@ -509,11 +540,10 @@ const i18n = {
     'loc-title': 'Location',
     'loc-sub': 'To measure the real UV Index',
     'skin-detected': 'Detected skin type',
-    'btn-gps': 'Use my location (GPS)',
-    'or-manual': 'or enter manually',
-    'btn-manual': 'Check UV Index',
+    'btn-gps': 'Detect my location (GPS)',
+    'btn-confirm-loc': 'Confirm and check UV Index',
     'gps-err': 'Could not get GPS',
-    'gps-err-sub': 'Enter coordinates manually.',
+    'gps-err-sub': 'Make sure to grant location permission in your browser and try again.',
     'results-title': 'Results',
     'uv-index-label': 'UV Index · Índice UV',
     'uv-level': 'Calculating...',
@@ -729,46 +759,156 @@ function skipCamera() {
   showScreen('screen-location');
 }
 
-// ── Geolocalización ────────────────────────────────────────────────────────────
-function getGPS() {
-  const statusEl = document.getElementById('gps-status');
-  const errorEl  = document.getElementById('gps-error');
-  const btnGPS   = document.getElementById('btn-gps');
+// ── Mapa Leaflet ──────────────────────────────────────────────────────────────
+let leafletMap = null;
+let leafletMarker = null;
 
-  statusEl.textContent = currentLang === 'es' ? 'Obteniendo ubicación...' : 'Getting location...';
-  statusEl.classList.remove('hidden');
+function initMap(lat, lng) {
+  const mapEl = document.getElementById('leaflet-map');
+
+  // Custom marker icon con colores UPCH
+  const customIcon = L.divIcon({
+    className: '',
+    html: `<div style="
+      width:36px;height:44px;position:relative;filter:drop-shadow(0 3px 6px rgba(0,0,0,0.35));
+    ">
+      <svg viewBox="0 0 36 44" fill="none" xmlns="http://www.w3.org/2000/svg" width="36" height="44">
+        <path d="M18 0C8.06 0 0 8.06 0 18c0 13.5 18 26 18 26S36 31.5 36 18C36 8.06 27.94 0 18 0z" fill="#7B1D3A"/>
+        <circle cx="18" cy="18" r="9" fill="#F5A07A"/>
+        <circle cx="18" cy="18" r="5" fill="#F5ECD7"/>
+      </svg>
+    </div>`,
+    iconSize: [36, 44],
+    iconAnchor: [18, 44],
+    popupAnchor: [0, -46]
+  });
+
+  if (leafletMap) {
+    // Ya existe: solo mover la vista y el marker
+    leafletMap.setView([lat, lng], 15);
+    if (leafletMarker) {
+      leafletMarker.setLatLng([lat, lng]);
+    } else {
+      leafletMarker = L.marker([lat, lng], { icon: customIcon }).addTo(leafletMap);
+    }
+    return;
+  }
+
+  // Primera vez: crear el mapa
+  leafletMap = L.map(mapEl, {
+    center: [lat, lng],
+    zoom: 15,
+    zoomControl: true,
+    attributionControl: true,
+    dragging: true,
+    scrollWheelZoom: false,
+  });
+
+  // Tiles de OpenStreetMap (gratuito, sin API key)
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    maxZoom: 19,
+  }).addTo(leafletMap);
+
+  leafletMarker = L.marker([lat, lng], { icon: customIcon }).addTo(leafletMap);
+
+  // Permitir mover el pin haciendo clic en el mapa
+  leafletMap.on('click', async (e) => {
+    const { lat: newLat, lng: newLng } = e.latlng;
+    userLat = newLat;
+    userLng = newLng;
+    leafletMarker.setLatLng([newLat, newLng]);
+    await reverseGeocode(newLat, newLng);
+  });
+}
+
+// ── Geocodificación inversa (Nominatim, gratuito) ─────────────────────────────
+async function reverseGeocode(lat, lng) {
+  const addrEl   = document.getElementById('address-text');
+  const coordsEl = document.getElementById('coords-text');
+  const labelEl  = document.getElementById('address-label');
+
+  addrEl.textContent  = currentLang === 'es' ? 'Buscando dirección...' : 'Looking up address...';
+  coordsEl.textContent = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+
+  try {
+    const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=${currentLang}`;
+    const res  = await fetch(url, { headers: { 'Accept-Language': currentLang } });
+    const data = await res.json();
+
+    if (data && data.display_name) {
+      // Mostrar versión corta: barrio, ciudad, país
+      const a = data.address || {};
+      const parts = [
+        a.road || a.pedestrian || a.footway || '',
+        a.suburb || a.neighbourhood || a.quarter || '',
+        a.city || a.town || a.village || a.municipality || '',
+        a.country || '',
+      ].filter(Boolean);
+      addrEl.textContent  = parts.slice(0, 3).join(', ') || data.display_name;
+      labelEl.textContent = currentLang === 'es' ? 'Ubicación detectada' : 'Detected location';
+    } else {
+      addrEl.textContent = currentLang === 'es' ? 'Dirección no encontrada' : 'Address not found';
+    }
+  } catch (e) {
+    console.warn('[Luzka] Nominatim error:', e);
+    addrEl.textContent = currentLang === 'es' ? 'Sin conexión para obtener dirección' : 'No connection for address lookup';
+  }
+}
+
+// ── Geolocalización GPS ───────────────────────────────────────────────────────
+function getGPS() {
+  const statusDiv = document.getElementById('gps-status');
+  const errorEl   = document.getElementById('gps-error');
+  const btnGPS    = document.getElementById('btn-gps');
+  const mapCont   = document.getElementById('map-container');
+
+  // Reset
+  errorEl.classList.add('hidden');
+  mapCont.classList.add('hidden');
+  statusDiv.classList.remove('hidden');
+  document.getElementById('gps-status-text').textContent =
+    currentLang === 'es' ? 'Obteniendo tu ubicación...' : 'Getting your location...';
   btnGPS.disabled = true;
-  btnGPS.style.opacity = '0.5';
+  btnGPS.style.opacity = '0.6';
 
   navigator.geolocation.getCurrentPosition(
-    (pos) => {
+    async (pos) => {
       userLat = pos.coords.latitude;
       userLng = pos.coords.longitude;
-      statusEl.textContent = `✓ ${userLat.toFixed(4)}, ${userLng.toFixed(4)}`;
-      statusEl.classList.add('text-green-600');
-      setTimeout(() => fetchUV(userLat, userLng), 600);
+
+      statusDiv.classList.add('hidden');
+      btnGPS.disabled = false;
+      btnGPS.style.opacity = '1';
+
+      // Mostrar mapa y dirección
+      mapCont.classList.remove('hidden');
+      mapCont.classList.add('visible');
+
+      // Pequeño delay para que el DOM renderice el contenedor antes de iniciar Leaflet
+      setTimeout(async () => {
+        initMap(userLat, userLng);
+        await reverseGeocode(userLat, userLng);
+        // Forzar redibujado del mapa (necesario cuando el contenedor estaba oculto)
+        if (leafletMap) leafletMap.invalidateSize();
+      }, 80);
     },
     (err) => {
       console.warn('[Luzka] GPS error:', err);
+      statusDiv.classList.add('hidden');
       errorEl.classList.remove('hidden');
-      statusEl.classList.add('hidden');
       btnGPS.disabled = false;
       btnGPS.style.opacity = '1';
     },
-    { timeout: 10000, maximumAge: 60000 }
+    { enableHighAccuracy: true, timeout: 12000, maximumAge: 30000 }
   );
 }
 
-function useManualCoords() {
-  const lat = parseFloat(document.getElementById('input-lat').value);
-  const lng = parseFloat(document.getElementById('input-lng').value);
-  if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-    alert(currentLang === 'es' ? 'Ingresa coordenadas válidas.' : 'Enter valid coordinates.');
-    return;
+// ── Confirmar ubicación y consultar UV ────────────────────────────────────────
+function confirmLocation() {
+  if (userLat !== null && userLng !== null) {
+    fetchUV(userLat, userLng);
   }
-  userLat = lat;
-  userLng = lng;
-  fetchUV(lat, lng);
 }
 
 // ── API OpenUV ─────────────────────────────────────────────────────────────────
@@ -836,7 +976,12 @@ function renderResults(data, lat, lng) {
   document.getElementById('uv-ozone').textContent = data.ozone ? data.ozone.toFixed(0) : '–';
   const now = new Date();
   document.getElementById('uv-time').textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  document.getElementById('uv-coords-display').textContent = `${lat.toFixed(2)}, ${lng.toFixed(2)}`;
+  // Mostrar la dirección geocodificada en resultados (si ya se obtuvo), si no, coords
+  const addrInResults = document.getElementById('address-text');
+  const addrShort = addrInResults && addrInResults.textContent && addrInResults.textContent !== '–'
+    ? addrInResults.textContent
+    : `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+  document.getElementById('uv-coords-display').textContent = addrShort;
 
   // Skin badge
   const skinLabels = {
