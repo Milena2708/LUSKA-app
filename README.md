@@ -145,7 +145,7 @@ Regístrate o gestiona tu clave en: [openuv.io](https://www.openuv.io)
 
 ## 📱 Flujo de usuario
 <div align="center">
-![Flujo de usuario Luzka](user-flow.svg)
+![Flujo de usuario Luzka](Flujo_de_usuario.svg)
  
 </div>
 | Paso | Pantalla | Qué hace el usuario |
