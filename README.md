@@ -156,6 +156,7 @@ Regístrate o gestiona tu clave en: [openuv.io](https://www.openuv.io)
 | **4** | ☀️ **Resultados** | Visualiza su índice UV, escala OMS y recomendaciones personalizadas |
  
 ---
+ 
 
 ## ⚠️ Permisos requeridos
 
