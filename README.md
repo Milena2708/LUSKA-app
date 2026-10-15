@@ -105,7 +105,7 @@ luzka/
 4. En ~2 minutos tu app estará en:
 
 ```
-https://milena2708.github.io/LUSKA-app/
+https://<tu-usuario>.github.io/<nombre-del-repo>/
 ```
 
 > La app requiere **HTTPS** para que funcionen la cámara y el GPS. GitHub Pages lo provee automáticamente. ✅
@@ -144,19 +144,21 @@ Regístrate o gestiona tu clave en: [openuv.io](https://www.openuv.io)
 ---
 
 ## 📱 Flujo de usuario
+
 <div align="center">
+
 ![Flujo de usuario Luzka](Flujo_de_usuario.svg)
- 
+
 </div>
+
 | Paso | Pantalla | Qué hace el usuario |
 |------|----------|---------------------|
 | **1** | 🌅 **Bienvenida** | Lee el resumen de la app, instala la PWA si desea |
 | **2** | 📷 **Sensor Biofacial** | Apunta la cámara al rostro — el análisis es automático |
 | **3** | 📍 **Mi Ubicación** | Activa el GPS y ajusta el pin en el mapa si es necesario |
 | **4** | ☀️ **Resultados** | Visualiza su índice UV, escala OMS y recomendaciones personalizadas |
- 
+
 ---
- 
 
 ## ⚠️ Permisos requeridos
 
@@ -171,7 +173,7 @@ Regístrate o gestiona tu clave en: [openuv.io](https://www.openuv.io)
 
 ## 👩‍💻 Autora
 
-**Milena Nicol Yalli Espinoza** · Facultad de Ingeniería Industrial  
+**Milena** · Facultad de Ingeniería Industrial  
 Universidad Peruana Cayetano Heredia (UPCH) · Lima, Perú
 
 ---
